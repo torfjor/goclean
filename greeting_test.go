@@ -71,7 +71,7 @@ func TestGreeterFunc_ServeHTTP(t *testing.T) {
 	}
 }
 
-func TestGreeterFunc_Authorization(t *testing.T) {
+func TestAuthorizedGreeter(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		name    string
