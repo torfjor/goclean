@@ -57,7 +57,8 @@ const (
 type Permission int
 
 const (
-	Greet Permission = iota
+	None Permission = iota
+	Greet
 )
 
 // NewAuthorizedGreetingFunc returns a GreeterFunc that validates that the
