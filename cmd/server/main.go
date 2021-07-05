@@ -36,8 +36,8 @@ func run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	greeter := goclean.NewAuthorizedGreetingFunc(
-		goclean.NewGreeterFunc(&inmem.Store{Templates: []string{"Hello, %s!", "Bonjour, %s!"}}),
+	greeter := goclean.AuthorizedGreeter(
+		goclean.Greeter(&inmem.Store{Templates: []string{"Hello, %s!", "Bonjour, %s!"}}),
 		goclean.Greet,
 	)
 

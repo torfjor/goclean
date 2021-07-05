@@ -19,9 +19,9 @@ type GreetingStore interface {
 	RandomGreetingTemplate(ctx context.Context) (string, error)
 }
 
-// NewGreeterFunc returns a configured GreeterFunc. We put all business logic
+// Greeter returns a configured GreeterFunc. We put all business logic
 // here where it's separated from transport and storage related concerns.
-func NewGreeterFunc(store GreetingStore) GreeterFunc {
+func Greeter(store GreetingStore) GreeterFunc {
 	return func(ctx context.Context, name string) (Greeting, error) {
 		if name == "" {
 			return "", fmt.Errorf("Cannot greet a person without a name!")
@@ -61,10 +61,10 @@ const (
 	Greet
 )
 
-// NewAuthorizedGreetingFunc returns a GreeterFunc that validates that the
+// AuthorizedGreeter returns a GreeterFunc that validates that the
 // calling context has the required permissions in perms to call next. Fails
 // with ErrUnauthorized if not.
-func NewAuthorizedGreetingFunc(next GreeterFunc, perms Permission) GreeterFunc {
+func AuthorizedGreeter(next GreeterFunc, perms Permission) GreeterFunc {
 	return func(ctx context.Context, name string) (Greeting, error) {
 		ctxPerms, ok := ctx.Value(ContextKeyPermissions).(Permission)
 		if !ok {

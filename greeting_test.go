@@ -28,7 +28,7 @@ func TestGreeterFunc_Greet(t *testing.T) {
 		{"errors for missing name", &pb.GreetRequest{}, true},
 	}
 
-	greeter := goclean.NewGreeterFunc(staticGreetingStore{})
+	greeter := goclean.Greeter(staticGreetingStore{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := greeter.Greet(ctx, tt.req)
@@ -55,7 +55,7 @@ func TestGreeterFunc_ServeHTTP(t *testing.T) {
 		{"http.StatusInternalServerErrror for missing name", "", http.StatusInternalServerError},
 	}
 
-	greeter := goclean.NewGreeterFunc(staticGreetingStore{})
+	greeter := goclean.Greeter(staticGreetingStore{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/?name=%s", tt.nameToGreet), nil)
@@ -83,7 +83,7 @@ func TestGreeterFunc_Authorization(t *testing.T) {
 		{"correct permissions in context", context.WithValue(ctx, goclean.ContextKeyPermissions, goclean.Greet), false},
 	}
 
-	greeter := goclean.NewAuthorizedGreetingFunc(goclean.NewGreeterFunc(staticGreetingStore{}), goclean.Greet)
+	greeter := goclean.AuthorizedGreeter(goclean.Greeter(staticGreetingStore{}), goclean.Greet)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := greeter(tt.ctx, "foo")
@@ -116,7 +116,7 @@ func TestGreeterFunc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := goclean.NewGreeterFunc(tt.store)
+			g := goclean.Greeter(tt.store)
 			_, err := g(context.Background(), tt.nameToGreet)
 			if tt.wantErr && err != nil {
 				return
