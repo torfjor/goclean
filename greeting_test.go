@@ -2,7 +2,11 @@ package goclean_test
 
 import (
 	"context"
+	"fmt"
 	"goclean"
+	pb "goclean/gen"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -11,6 +15,60 @@ type staticGreetingStore struct{}
 
 func (s staticGreetingStore) RandomGreetingTemplate(ctx context.Context) (string, error) {
 	return "hello %s", nil
+}
+
+func TestGreeterFunc_Greet(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		name    string
+		req     *pb.GreetRequest
+		wantErr bool
+	}{
+		{"no error for valid input", &pb.GreetRequest{Name: "foo"}, false},
+		{"errors for missing name", &pb.GreetRequest{}, true},
+	}
+
+	greeter := goclean.NewGreeterFunc(staticGreetingStore{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := greeter.Greet(ctx, tt.req)
+			if tt.wantErr && err != nil {
+				return
+			} else if !tt.wantErr && err != nil {
+				t.Fatalf("want nil err, got %v", err)
+			} else if tt.wantErr && err == nil {
+				t.Fatalf("want non-nil err, got %v", err)
+			}
+		})
+	}
+}
+
+func TestGreeterFunc_ServeHTTP(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		name        string
+		nameToGreet string
+		wantStatus  int
+	}{
+		{"http.StatusOK for valid input", "foo", http.StatusOK},
+		// This should really be http.StatusBadRequest, but meh.
+		{"http.StatusInternalServerErrror for missing name", "", http.StatusInternalServerError},
+	}
+
+	greeter := goclean.NewGreeterFunc(staticGreetingStore{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/?name=%s", tt.nameToGreet), nil)
+			if err != nil {
+				t.Fatalf("http.NewRequestWithContext() err=%v", err)
+			}
+			w := httptest.NewRecorder()
+			greeter.ServeHTTP(w, r)
+			if got := w.Result().StatusCode; got != tt.wantStatus {
+				t.Errorf("got status %v, want %v", got, tt.wantStatus)
+			}
+		})
+	}
 }
 
 func TestGreeterFunc_Authorization(t *testing.T) {
