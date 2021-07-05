@@ -44,6 +44,39 @@ func NewGreeterFunc(store GreetingStore) GreeterFunc {
 	}
 }
 
+var (
+	ErrUnauthorized = fmt.Errorf("Unauthorized")
+)
+
+type contextKey int
+
+const (
+	ContextKeyPermissions contextKey = iota + 1
+)
+
+type Permission int
+
+const (
+	Greet Permission = iota
+)
+
+// NewAuthorizedGreetingFunc returns a GreeterFunc that validates that the
+// calling context has the required permissions in perms to call next. Fails
+// with ErrUnauthorized if not.
+func NewAuthorizedGreetingFunc(next GreeterFunc, perms Permission) GreeterFunc {
+	return func(ctx context.Context, name string) (Greeting, error) {
+		ctxPerms, ok := ctx.Value(ContextKeyPermissions).(Permission)
+		if !ok {
+			return "", ErrUnauthorized
+		}
+		if ctxPerms != perms {
+			return "", ErrUnauthorized
+		}
+
+		return next(ctx, name)
+	}
+}
+
 // ServeHTTP implements http.ServeHTTP.
 func (g GreeterFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {

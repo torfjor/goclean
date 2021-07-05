@@ -9,6 +9,7 @@ import (
 	"os/signal"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -37,6 +38,7 @@ func run(ctx context.Context, args []string) error {
 	}
 
 	client := pb.NewGreetingServiceClient(conn)
+	ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", "password")
 	res, err := client.Greet(ctx, &pb.GreetRequest{Name: flags.Arg(1)})
 	if err != nil {
 		return err

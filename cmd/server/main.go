@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"goclean"
+	"goclean/authorization"
 	pb "goclean/gen"
 	"goclean/inmem"
 	"net"
@@ -34,7 +35,11 @@ func run(ctx context.Context, args []string) error {
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
-	greeter := goclean.NewGreeterFunc(&inmem.Store{Templates: []string{"Hello, %s!", "Bonjour, %s!"}})
+
+	greeter := goclean.NewAuthorizedGreetingFunc(
+		goclean.NewGreeterFunc(&inmem.Store{Templates: []string{"Hello, %s!", "Bonjour, %s!"}}),
+		goclean.Greet,
+	)
 
 	done := make(chan struct{})
 	if *grpcFlag {
@@ -44,7 +49,7 @@ func run(ctx context.Context, args []string) error {
 		}
 
 		go func() {
-			grpcSrv := grpc.NewServer()
+			grpcSrv := grpc.NewServer(grpc.UnaryInterceptor(authorization.GRPCAuthorizer()))
 			pb.RegisterGreetingServiceServer(grpcSrv, struct {
 				goclean.GreeterFunc
 				pb.UnsafeGreetingServiceServer
@@ -64,7 +69,7 @@ func run(ctx context.Context, args []string) error {
 
 	if *httpFlag {
 		go func() {
-			srv := http.Server{Addr: "0.0.0.0:8081", Handler: greeter}
+			srv := http.Server{Addr: "0.0.0.0:8081", Handler: authorization.HTTPAuthorizer(greeter)}
 			go func() {
 				srv.ListenAndServe()
 			}()
