@@ -98,7 +98,7 @@ func TestGreeterFunc_Authorization(t *testing.T) {
 	}
 }
 
-func TestGreeterFunc(t *testing.T) {
+func TestGreeter(t *testing.T) {
 	type args struct {
 		store       goclean.GreetingStore
 		nameToGreet string
